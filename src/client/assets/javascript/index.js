@@ -86,7 +86,7 @@ async function handleCreateRace() {
 		console.log(race);
 		// TODO - update the store with the race id
 		store.race_id = race.ID;
-		console.log(race.ID);
+		console.log(store.race_id);
 		renderAt('#race', renderRaceStartView(race.Track, race.Cars));
 	}catch(error){
 		renderAt('#error', `<h2 class="error">${error.message}</h2>`)
@@ -98,10 +98,10 @@ async function handleCreateRace() {
 	// TODO - call the async function runCountdown
 	await runCountdown();
 	// TODO() - call the async function startRace
-	await startRace(store.race_id -1);
+	await startRace(store.race_id);
 	
 	// TODO - call the async function runRace
-	await runRace(store.race_id -1);
+	await runRace(store.race_id);
 }
 
 function runRace(raceID) {
@@ -123,7 +123,7 @@ function runRace(raceID) {
 			}catch(err){
 				console.log("Error with setInterval:: ", err)
 			}
-		},500) 
+		},5000) 
 	/* 
 		TODO - if the race info status property is "in-progress", update the leaderboard by calling:
 
@@ -204,7 +204,7 @@ function handleAccelerate() {
 	// TODO - Invoke the API call to accelerate
 	accelerate(store.race_id)
 	.then(() => console.log("accelerate button clicked"))
-	.catch((error) => console.log(error))
+	.catch((error) => console.log(error.message))
 }
 
 // HTML VIEWS ------------------------------------------------
@@ -435,6 +435,7 @@ function createRace(player_id, track_id) {
 }
 
 function getRace(id) {
+	console.log(id)
 	// GET request to `${SERVER}/api/races/${id}`
 	return fetch(`${SERVER}/api/races/${id}`)
 		.then(res => res.json())
@@ -442,15 +443,16 @@ function getRace(id) {
 }
 
 function startRace(id) {
+	console.log(id)
 	return fetch(`${SERVER}/api/races/${id}/start`, {
 		method: 'POST',
 		...defaultFetchOpts(),
 	})
-	//.then(res => res.json())
 	.catch(error => console.log("Problem with getRace request::", error))
 }
 
 function accelerate(id) {
+	console.log(id)
 	// POST request to `${SERVER}/api/races/${id}/accelerate`
 	// options parameter provided as defaultFetchOpts
 	// no body or datatype needed for this request
