@@ -34,15 +34,17 @@ async function onPageLoad() {
 
 function setupClickHandlers() {
 	document.addEventListener('click', function(event) {
-		const { target } = event
+		let { target } = event
 
 		// Race track form field
-		if (target.matches('.card.track')) {
+		if (target.parentNode.matches('.card.track')) {
+			target = target.parentNode;
 			handleSelectTrack(target)
 		}
 
 		// Podracer form field
-		if (target.matches('.card.podracer')) {
+		if (target.parentNode.matches('.card.podracer')) {
+			target = target.parentNode;
 			handleSelectPodRacer(target)
 		}
 
@@ -54,8 +56,10 @@ function setupClickHandlers() {
 			handleCreateRace()
 		}
 
+	
 		// Handle acceleration click
 		if (target.matches('#gas-peddle')) {
+			console.log(target)
 			handleAccelerate(target)
 		}
 
@@ -80,13 +84,19 @@ async function handleCreateRace() {
 	const track_id = store.track_id
 	const player_id = store.player_id
 
+	console.log(track_id +" "+player_id);
+
+	if(!track_id || !player_id) {
+		alert(`Please select track and racer to start the race!`);
+		return;
+	  }
+
 	// const race = TODO - invoke the API call to create the race, then save the result
 	try{
 		const race = await createRace(player_id, track_id);
-		console.log(race);
 		// TODO - update the store with the race id
-		store.race_id = race.ID;
-		console.log(store.race_id);
+		store.race_id = race.ID -1;
+
 		renderAt('#race', renderRaceStartView(race.Track, race.Cars));
 	}catch(error){
 		renderAt('#error', `<h2 class="error">${error.message}</h2>`)
@@ -109,21 +119,21 @@ function runRace(raceID) {
 	// TODO - use Javascript's built in setInterval method to get race info every 500ms
 		const delay = setInterval( async () => {
 			try{
-				let race = getRace(raceID);
-				console.log(race);
-			
-				if (race.status === "in-progress"){
-					renderAt('#leaderBoard', raceProgress(rece.positions))
+				const raceStatus = await getRace(raceID);
+				console.log(`Race status is: ${raceStatus.status}`)
+
+				if (raceStatus.status === "in-progress"){
+					renderAt('#leaderBoard', raceProgress(raceStatus.positions))
 				}
-				else if (race.status === "finished"){
+				else if (raceStatus.status === "finished"){
 					clearInterval(delay) // to stop the interval from repeating
-					renderAt('#race', resultsView(rece.positions)) // to render the results view
-					resolve(race) // resolve the promise
+					renderAt('#race', resultsView(raceStatus.positions)) // to render the results view
+					resolve(raceStatus) // resolve the promise
 				}
 			}catch(err){
 				console.log("Error with setInterval:: ", err)
 			}
-		},5000) 
+		},500) 
 	/* 
 		TODO - if the race info status property is "in-progress", update the leaderboard by calling:
 
@@ -181,7 +191,7 @@ function handleSelectPodRacer(target) {
 	target.classList.add('selected')
 
 	// TODO - save the selected racer to the store
-	store.race_id = parseInt(target.id);
+	store.player_id = parseInt(target.id);
 }
 
 function handleSelectTrack(target) {
@@ -431,11 +441,11 @@ function createRace(player_id, track_id) {
 		body: JSON.stringify(body)
 	})
 	.then(res => res.json())
+	.then(race => { console.log(`Your race created; id: ${race.ID}`); return race })
 	.catch(err => console.log("Problem with createRace request::", err))
 }
 
 function getRace(id) {
-	console.log(id)
 	// GET request to `${SERVER}/api/races/${id}`
 	return fetch(`${SERVER}/api/races/${id}`)
 		.then(res => res.json())
@@ -443,7 +453,6 @@ function getRace(id) {
 }
 
 function startRace(id) {
-	console.log(id)
 	return fetch(`${SERVER}/api/races/${id}/start`, {
 		method: 'POST',
 		...defaultFetchOpts(),
@@ -452,7 +461,6 @@ function startRace(id) {
 }
 
 function accelerate(id) {
-	console.log(id)
 	// POST request to `${SERVER}/api/races/${id}/accelerate`
 	// options parameter provided as defaultFetchOpts
 	// no body or datatype needed for this request
